@@ -1,26 +1,29 @@
-const { Liquid } = require('liquidjs')
+const { Liquid } = require('../../dist/liquid.cjs.js');
+const fs = require('fs');
+const path = require('path');
+const v8 = require('v8');
+const heapdump = require('heapdump');
 
 const engine = new Liquid({
   root: __dirname,
   extname: '.liquid'
 })
 
-engine.registerTag('header', {
-  parse: function (token) {
-    const [key, val] = token.args.split(':')
-    this[key] = val
-  },
-  render: async function (scope, hash, emitter) {
-    const title = await this.liquid.evalValue(this.content, scope)
-    emitter.write(`<h1>${title}</h1>`)
-  }
-})
+const templateString = fs.readFileSync(path.join(__dirname, 'todolist.liquid'), 'utf8');
 
-const ctx = {
-  todos: ['fork and clone', 'make it better', 'make a pull request'],
-  title: 'Welcome to liquidjs!'
+const inital_used_heap_size = v8.getHeapStatistics().used_heap_size;
+
+const templates = [];
+
+for (let i = 0; i < 100; i++) {
+  templates.push(engine.parse(templateString));
 }
 
-engine.renderFile('todolist', ctx)
-  .then(console.log)
-  .catch(err => console.error(err.stack))
+Promise.all(templates)
+  .then(() => {
+    const final_used_heap_size = v8.getHeapStatistics().used_heap_size;
+    console.log(final_used_heap_size - inital_used_heap_size);
+    heapdump.writeSnapshot('test.heapsnapshot');
+
+  })
+  .catch(err => console.error(err.stack));

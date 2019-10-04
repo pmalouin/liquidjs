@@ -8,7 +8,9 @@ export class Token {
   public input: string
   public file?: string
   public value: string
+  private x: any;
   public constructor (raw: string, input: string, line: number, col: number, file?: string) {
+    this.x = Number(raw)
     this.col = col
     this.line = line
     this.raw = raw
